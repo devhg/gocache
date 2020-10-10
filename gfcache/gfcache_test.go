@@ -1,9 +1,10 @@
-package gofly_cache
+package gfcache
 
 import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -19,9 +20,8 @@ func TestGetterFunc_Get(t *testing.T) {
 }
 
 func TestA(t *testing.T) {
-	m := make(map[int]*cache)
-	c, ok := m[1]
-	fmt.Println(c, ok)
+	parts := strings.SplitN("/c/g/k", "/", 4)
+	fmt.Println(parts[2])
 }
 
 //用map模仿一个慢的数据库
