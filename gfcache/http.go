@@ -1,9 +1,8 @@
-package httpget
+package gfcache
 
 import (
 	"fmt"
 	"github.com/QXQZX/gofly-cache/consistenthash"
-	"github.com/QXQZX/gofly-cache/gfcache"
 	"github.com/QXQZX/gofly-cache/gfcache/node"
 	"log"
 	"net/http"
@@ -57,7 +56,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	key := parts[3]
 
 	p.Log("%s %s", groupName, key)
-	group := gfcache.GetGroup(groupName)
+	group := GetGroup(groupName)
 
 	if group == nil {
 		http.Error(w, "no such group: "+groupName, http.StatusNotFound)

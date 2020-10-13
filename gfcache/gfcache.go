@@ -69,7 +69,7 @@ func (g *Group) Get(key string) (ByteView, error) {
 	}
 
 	if byteView, ok := g.mainCache.get(key); ok {
-		log.Printf("read from cache %p", &byteView)
+		log.Printf("read from local cache %p", &byteView)
 		return byteView, nil
 	}
 
