@@ -8,7 +8,7 @@
 - [x] 单机并发缓存
 - [x] http客户端支持
 - [x] 一致性哈希算法
-- [ ] 分布式节点支持
+- [x] 分布式节点支持
 - [ ] 缓存击穿和缓存穿透问题
 - [ ] Protobuf通信
 - [ ] 其他问题。。
@@ -26,6 +26,12 @@
 
     解决：
     
+
+###
+项目结构
+![](https://cdn.jsdelivr.net/gh/QXQZX/CDN@latest/images/go/gfcache/framework.png)
+使用流程
+![](https://cdn.jsdelivr.net/gh/QXQZX/CDN@latest/images/go/gfcache/runAndUse.png)
 
 <hr>
 仅用于学习

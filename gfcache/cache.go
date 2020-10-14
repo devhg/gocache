@@ -5,12 +5,14 @@ import (
 	"sync"
 )
 
+//并发缓存，对核心lru进行封装
 type cache struct {
 	mu         sync.Mutex
 	lru        *lru.Cache
 	cacheBytes int64
 }
 
+//添加缓存
 func (c *cache) add(key string, val ByteView) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -23,6 +25,7 @@ func (c *cache) add(key string, val ByteView) {
 	c.lru.Add(key, val)
 }
 
+//获取缓存
 func (c *cache) get(key string) (val ByteView, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

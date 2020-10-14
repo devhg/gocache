@@ -8,8 +8,8 @@ import (
 )
 
 //对外回调函数接口
-// A Getter loads data for a key.
-type Getter interface {
+// A Getter loads data from DB or etc. for a key.
+type DataGetter interface {
 	Get(key string) ([]byte, error)
 }
 
@@ -28,9 +28,9 @@ func (g GetterFunc) Get(key string) ([]byte, error) {
 //每一个group拥有一个唯一的name，这样可以创建多个group
 //score得分，info个人信息，courses课程
 type Group struct {
-	name      string
-	mainCache cache  // 并发缓存实现
-	getter    Getter //缓存未命中时获取数据源的回调
+	name       string
+	mainCache  cache      // 并发缓存实现
+	dataGetter DataGetter //缓存未命中时获取数据源的回调
 
 	picker node.NodePicker
 }
@@ -40,16 +40,16 @@ var (
 	groups = make(map[string]*Group)
 )
 
-func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
+func NewGroup(name string, cacheBytes int64, getter DataGetter) *Group {
 	if getter == nil {
 		panic("getter is needed")
 	}
 	mu.Lock()
 	defer mu.Unlock()
 	g := &Group{
-		name:      name,
-		mainCache: cache{cacheBytes: cacheBytes},
-		getter:    getter,
+		name:       name,
+		mainCache:  cache{cacheBytes: cacheBytes},
+		dataGetter: getter,
 	}
 	groups[name] = g
 	return groups[name]
@@ -68,22 +68,23 @@ func (g *Group) Get(key string) (ByteView, error) {
 		return ByteView{}, fmt.Errorf("key is required")
 	}
 
+	//在本机缓存中查找
 	if byteView, ok := g.mainCache.get(key); ok {
 		log.Printf("read from local cache %p", &byteView)
 		return byteView, nil
 	}
 
+	//去其他节点查找或者从数据库从新缓存
 	return g.load(key)
 }
 
 func (g *Group) load(key string) (byteView ByteView, err error) {
-	//log.Println("get resources from other nodes or callback")
 	if g.picker != nil {
 		if nodeGetter, ok := g.picker.PickNode(key); ok {
 			if byteView, err = g.getFromNode(nodeGetter, key); err == nil {
 				return byteView, nil
 			}
-			log.Println("[gofly-Cache] Failed to get from peer", err)
+			log.Println("[gfCache] Failed to get from other node", err)
 		}
 	}
 	return g.getLocally(key)
@@ -91,7 +92,7 @@ func (g *Group) load(key string) (byteView ByteView, err error) {
 
 //从自定义的回调函数中获取缓存中没有的资源
 func (g *Group) getLocally(key string) (ByteView, error) {
-	bytes, err := g.getter.Get(key)
+	bytes, err := g.dataGetter.Get(key)
 	if err != nil {
 		return ByteView{}, err
 	}
@@ -100,7 +101,7 @@ func (g *Group) getLocally(key string) (ByteView, error) {
 	return byteView, nil
 }
 
-//迁移缓存到当前group
+//缓存到当前节点的group
 func (g *Group) populateCache(key string, val ByteView) {
 	g.mainCache.add(key, val)
 }

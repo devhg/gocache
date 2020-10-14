@@ -22,13 +22,14 @@ func createGroup() *gfcache.Group {
 			if v, ok := db[key]; ok {
 				return []byte(v), nil
 			}
+			log.Println("[SlowDB] key is not exist", key)
 			return nil, fmt.Errorf("%s not exist", key)
 		}))
 }
 
 func startCacheServer(addr string, addrs []string, group *gfcache.Group) {
 	pool := gfcache.NewHTTPPool(addr)
-	pool.Set(addrs...)
+	pool.SetNodes(addrs...)
 
 	group.RegisterPicker(pool)
 

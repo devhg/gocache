@@ -9,7 +9,7 @@ import (
 )
 
 func TestGetterFunc_Get(t *testing.T) {
-	var g Getter = GetterFunc(func(key string) ([]byte, error) {
+	var g DataGetter = GetterFunc(func(key string) ([]byte, error) {
 		return []byte(key), nil
 	})
 

@@ -4,11 +4,10 @@ import "container/list"
 
 type Cache struct {
 	maxBytes int64 // 最大使用内存
-	nbytes   int64 // 已经使用的内存
+	nowBytes int64 // 已经使用的内存
 	ll       *list.List
 	cache    map[string]*list.Element
 
-	// optional and executed when an entry is purged.
 	//是某条记录被移除时的回调函数，可以为 nil
 	OnEvicted func(key string, value Value)
 }
@@ -53,7 +52,7 @@ func (c *Cache) RemoveOldest() {
 		kv := ele.Value.(*entry)
 		delete(c.cache, kv.key)
 
-		c.nbytes -= int64(len(kv.key)) + int64(kv.value.Len())
+		c.nowBytes -= int64(len(kv.key)) + int64(kv.value.Len())
 		if c.OnEvicted != nil {
 			c.OnEvicted(kv.key, kv.value)
 		}
@@ -65,15 +64,15 @@ func (c *Cache) Add(key string, val Value) {
 	if ele, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ele)
 		kv := ele.Value.(*entry)
-		c.nbytes += int64(val.Len()) - int64(kv.value.Len())
+		c.nowBytes += int64(val.Len()) - int64(kv.value.Len())
 		kv.value = val
 	} else {
 		front := c.ll.PushFront(&entry{key: key, value: val})
-		c.nbytes += int64(len(key)) + int64(val.Len())
+		c.nowBytes += int64(len(key)) + int64(val.Len())
 		c.cache[key] = front
 	}
 
-	for c.maxBytes != 0 && c.nbytes > c.maxBytes {
+	for c.maxBytes != 0 && c.nowBytes > c.maxBytes {
 		c.RemoveOldest()
 	}
 }
