@@ -38,6 +38,7 @@ func NewHTTPPool(selfAddr string) *HTTPPool {
 
 // print the Log of HTTPPool
 func (p *HTTPPool) Log(format string, v ...interface{}) {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Printf("[Server %s] %s\n", p.selfAddr, fmt.Sprintf(format, v...))
 }
 

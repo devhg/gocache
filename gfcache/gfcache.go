@@ -3,6 +3,7 @@ package gfcache
 import (
 	"fmt"
 	"github.com/QXQZX/gofly-cache/gfcache/node"
+	"github.com/QXQZX/gofly-cache/gfcache/singlereq"
 	"log"
 	"sync"
 )
@@ -32,6 +33,7 @@ type Group struct {
 	mainCache  cache      // 并发缓存实现
 	dataGetter DataGetter //缓存未命中时获取数据源的回调
 
+	loader *singlereq.ReqGroup
 	picker node.NodePicker
 }
 
@@ -50,6 +52,7 @@ func NewGroup(name string, cacheBytes int64, getter DataGetter) *Group {
 		name:       name,
 		mainCache:  cache{cacheBytes: cacheBytes},
 		dataGetter: getter,
+		loader:     &singlereq.ReqGroup{},
 	}
 	groups[name] = g
 	return groups[name]
@@ -79,15 +82,22 @@ func (g *Group) Get(key string) (ByteView, error) {
 }
 
 func (g *Group) load(key string) (byteView ByteView, err error) {
-	if g.picker != nil {
-		if nodeGetter, ok := g.picker.PickNode(key); ok {
-			if byteView, err = g.getFromNode(nodeGetter, key); err == nil {
-				return byteView, nil
+	// 每一个key只允许请求一次远程服务器或者db  防止缓存击穿和缓存穿透
+	val, err := g.loader.Do(key, func() (i interface{}, err error) {
+		if g.picker != nil {
+			if nodeGetter, ok := g.picker.PickNode(key); ok {
+				if byteView, err = g.getFromNode(nodeGetter, key); err == nil {
+					return byteView, nil
+				}
+				log.Println("[gfCache] Failed to get from other node", err)
 			}
-			log.Println("[gfCache] Failed to get from other node", err)
 		}
+		return g.getLocally(key)
+	})
+	if err == nil {
+		return val.(ByteView), nil
 	}
-	return g.getLocally(key)
+	return
 }
 
 //从自定义的回调函数中获取缓存中没有的资源

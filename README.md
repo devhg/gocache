@@ -9,7 +9,8 @@
 - [x] http客户端支持
 - [x] 一致性哈希算法
 - [x] 分布式节点支持
-- [ ] 缓存击穿和缓存穿透问题
+- [x] 缓存击穿问题
+- [ ] 缓存穿透问题
 - [ ] Protobuf通信
 - [ ] 其他问题。。
 
@@ -20,7 +21,7 @@
 
 * 缓存击穿：一个存在的key，在缓存过期的一刻，同时有大量的请求，这些请求都会击穿到 DB ，造成瞬时DB请求量大、压力骤增。
 
-    解决：
+    解决：使用sync.WaitGroup锁避免重入，保证并发的时候只请求一次，详见singlereq/single_req.go的Do()
 
 * 缓存穿透：查询一个不存在的数据，因为不存在则不会写到缓存中，所以每次都会去请求 DB，如果瞬间流量过大，穿透到 DB，导致宕机。
 
@@ -30,7 +31,7 @@
 ###
 项目结构
 ![](https://cdn.jsdelivr.net/gh/QXQZX/CDN@latest/images/go/gfcache/framework.png)
-使用流程
+创建流程
 ![](https://cdn.jsdelivr.net/gh/QXQZX/CDN@latest/images/go/gfcache/runAndUse.png)
 
 <hr>
