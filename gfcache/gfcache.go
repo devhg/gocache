@@ -3,6 +3,7 @@ package gfcache
 import (
 	"fmt"
 	"github.com/QXQZX/gofly-cache/gfcache/node"
+	pb "github.com/QXQZX/gofly-cache/gfcache/proto"
 	"github.com/QXQZX/gofly-cache/gfcache/singlereq"
 	"log"
 	"sync"
@@ -129,9 +130,11 @@ func (g *Group) getFromNode(getter node.NodeGetter, key string) (ByteView, error
 	if getter == nil {
 		panic("NodeGetter is required")
 	}
-	bytes, err := getter.Get(g.name, key)
+	request := &pb.Request{Group: g.name, Key: key}
+	response := &pb.Response{}
+	err := getter.Get(request, response)
 	if err != nil {
 		return ByteView{}, err
 	}
-	return ByteView{b: bytes}, nil
+	return ByteView{b: response.Value}, nil
 }

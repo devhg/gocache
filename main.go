@@ -4,8 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/QXQZX/gofly-cache/gfcache"
+	"github.com/arl/statsviz"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 //用map模仿一个慢的数据库
@@ -38,6 +42,13 @@ func startCacheServer(addr string, addrs []string, group *gfcache.Group) {
 }
 
 func startAPIServer(apiAddr string, group *gfcache.Group) {
+	// Force the GC to work to make the plots "move".
+	go work()
+
+	// Register statsviz handlers on the default serve mux.
+	statsviz.RegisterDefault()
+	//http.ListenAndServe(":8080", nil)
+
 	http.Handle("/api", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			key := r.URL.Query().Get("key")
@@ -83,4 +94,20 @@ func main() {
 	}
 
 	startCacheServer(addrMap[port], addrs, gfcache)
+}
+
+func work() {
+	// Generate some allocations
+	m := map[string][]byte{}
+
+	for {
+		b := make([]byte, 512+rand.Intn(16*1024))
+		m[strconv.Itoa(len(m)%(10*100))] = b
+
+		if len(m)%(10*100) == 0 {
+			m = make(map[string][]byte)
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
 }

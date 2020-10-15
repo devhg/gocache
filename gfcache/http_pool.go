@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/QXQZX/gofly-cache/gfcache/consistenthash"
 	"github.com/QXQZX/gofly-cache/gfcache/node"
+	pb "github.com/QXQZX/gofly-cache/gfcache/proto"
+	"github.com/golang/protobuf/proto"
 	"log"
 	"net/http"
 	"strings"
@@ -65,14 +67,18 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if get, err := group.Get(key); err != nil {
+	byteView, err := group.Get(key)
+
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
-	} else {
-		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Write(get.ByteSlice())
-		return
 	}
+	resp, err := proto.Marshal(&pb.Response{Value: byteView.ByteSlice()})
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(resp)
+	return
+
 }
 
 // Set the pool's list of nodes' key.
