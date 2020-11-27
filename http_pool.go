@@ -1,10 +1,10 @@
-package gfcache
+package main
 
 import (
 	"fmt"
-	"github.com/QXQZX/gofly-cache/gfcache/consistenthash"
-	"github.com/QXQZX/gofly-cache/gfcache/node"
-	pb "github.com/QXQZX/gofly-cache/gfcache/proto"
+	"github.com/cddgo/gocache/consistenthash"
+	"github.com/cddgo/gocache/node"
+	pb "github.com/cddgo/gocache/proto"
 	"github.com/golang/protobuf/proto"
 	"log"
 	"net/http"

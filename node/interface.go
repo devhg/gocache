@@ -1,6 +1,6 @@
 package node
 
-import pb "github.com/QXQZX/gofly-cache/gfcache/proto"
+import pb "github.com/cddgo/gocache/proto"
 
 //节点选择器
 type NodePicker interface {

@@ -1,10 +1,10 @@
-package gfcache
+package main
 
 import (
 	"fmt"
-	"github.com/QXQZX/gofly-cache/gfcache/node"
-	pb "github.com/QXQZX/gofly-cache/gfcache/proto"
-	"github.com/QXQZX/gofly-cache/gfcache/singlereq"
+	"github.com/cddgo/gocache/node"
+	"github.com/cddgo/gocache/singlereq"
+	pb "github.com/cddgo/gocache/proto"
 	"log"
 	"sync"
 )

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/QXQZX/gofly-cache/gfcache"
 	"github.com/arl/statsviz"
 	"log"
 	"math/rand"
@@ -19,8 +18,8 @@ var db = map[string]string{
 	"Sam":  "567",
 }
 
-func createGroup() *gfcache.Group {
-	return gfcache.NewGroup("scores", 2<<10, gfcache.GetterFunc(
+func createGroup() *Group {
+	return NewGroup("scores", 2<<10, GetterFunc(
 		func(key string) ([]byte, error) {
 			log.Println("[SlowDB] search key", key)
 			if v, ok := db[key]; ok {
@@ -31,17 +30,17 @@ func createGroup() *gfcache.Group {
 		}))
 }
 
-func startCacheServer(addr string, addrs []string, group *gfcache.Group) {
-	pool := gfcache.NewHTTPPool(addr)
+func startCacheServer(addr string, addrs []string, group *Group) {
+	pool := NewHTTPPool(addr)
 	pool.SetNodes(addrs...)
 
 	group.RegisterPicker(pool)
 
-	log.Println("gofly-cache is running at", addr)
+	log.Println("gocache is running at", addr)
 	log.Fatal(http.ListenAndServe(addr[7:], pool))
 }
 
-func startAPIServer(apiAddr string, group *gfcache.Group) {
+func startAPIServer(apiAddr string, group *Group) {
 	// Force the GC to work to make the plots "move".
 	go work()
 

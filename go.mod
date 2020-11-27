@@ -1,4 +1,4 @@
-module github.com/QXQZX/gofly-cache
+module github.com/cddgo/gocache
 
 go 1.13
 

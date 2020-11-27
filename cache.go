@@ -1,7 +1,7 @@
-package gfcache
+package main
 
 import (
-	"github.com/QXQZX/gofly-cache/gfcache/lru"
+	"github.com/cddgo/gocache/lru"
 	"sync"
 )
 

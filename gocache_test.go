@@ -1,4 +1,4 @@
-package gfcache
+package main
 
 import (
 	"fmt"
