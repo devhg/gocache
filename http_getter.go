@@ -1,8 +1,7 @@
-package main
+package gocache
 
 import (
 	"fmt"
-	"github.com/cddgo/gocache/node"
 	pb "github.com/cddgo/gocache/proto"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
@@ -39,13 +38,13 @@ func (h *httpGetter) Get(group, key string) ([]byte, error) {
 
 // protobuf通信
 func (h *httpGetter) Get(in *pb.Request, out *pb.Response) error {
-	url := fmt.Sprintf(
+	URL := fmt.Sprintf(
 		"%v%v/%v",
 		h.baseUrl,
 		url.QueryEscape(in.GetGroup()),
 		url.QueryEscape(in.GetKey()),
 	)
-	res, err := http.Get(url)
+	res, err := http.Get(URL)
 	if err != nil {
 		return err
 	}
@@ -66,4 +65,4 @@ func (h *httpGetter) Get(in *pb.Request, out *pb.Response) error {
 	return nil
 }
 
-var _ node.NodeGetter = (*httpGetter)(nil)
+var _ NodeGetter = (*httpGetter)(nil)

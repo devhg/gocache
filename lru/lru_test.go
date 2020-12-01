@@ -13,9 +13,15 @@ func (s String) Len() int {
 }
 
 func TestGet(t *testing.T) {
-	lru := New(int64(0), nil)
+	lru := New(&CacheConfig{
+		MaxBytes:   19,
+		MaxEntries: 2,
+	})
 
 	lru.Add("key", String("value"))
+	lru.Add("key2", String("value2"))
+
+	fmt.Println(lru.Len())
 
 	if val, ok := lru.Get("key"); !ok || string(val.(String)) != "value" {
 		log.Fatal("get value error")
@@ -30,7 +36,11 @@ func TestCache_RemoveOldest(t *testing.T) {
 	k1, k2, k3 := "k1", "k2", "k3"
 	v1, v2, v3 := "v1", "v2", "v3"
 
-	lru := New(int64(len(k1+k2+v1+v2)), nil)
+	lru := New(&CacheConfig{
+		MaxBytes:   int64(len(k1 + k2 + v1 + v2)),
+		MaxEntries: 4,
+		OnEvicted:  nil,
+	})
 	lru.Add(k1, String(v1))
 	lru.Add(k2, String(v2))
 	lru.Add(k3, String(v3))
@@ -49,7 +59,11 @@ func TestOnEvicted(t *testing.T) {
 		keys = append(keys, key)
 	}
 
-	lru := New(int64(len(k1+k2+v1+v2)), callback)
+	lru := New(&CacheConfig{
+		MaxBytes:   int64(len(k1 + k2 + v1 + v2)),
+		MaxEntries: 1,
+		OnEvicted:  callback,
+	})
 	lru.Add(k1, String(v1))
 	lru.Add(k2, String(v2))
 	lru.Add(k3, String(v3))

@@ -1,9 +1,8 @@
-package main
+package gocache
 
 import (
 	"fmt"
 	"github.com/cddgo/gocache/consistenthash"
-	"github.com/cddgo/gocache/node"
 	pb "github.com/cddgo/gocache/proto"
 	"github.com/golang/protobuf/proto"
 	"log"
@@ -76,7 +75,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resp, err := proto.Marshal(&pb.Response{Value: byteView.ByteSlice()})
 
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Write(resp)
+	_, _ = w.Write(resp)
 	return
 
 }
@@ -99,7 +98,7 @@ func (p *HTTPPool) SetNodes(nodeKeys ...string) {
 
 // PickNode method picks a node according to key
 // 具体的 key，选择节点，返回节点对应的HTTP处理器(NodeGetter)。
-func (p *HTTPPool) PickNode(key string) (node.NodeGetter, bool) {
+func (p *HTTPPool) PickNode(key string) (NodeGetter, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -110,4 +109,4 @@ func (p *HTTPPool) PickNode(key string) (node.NodeGetter, bool) {
 	return nil, false
 }
 
-var _ node.NodePicker = (*HTTPPool)(nil)
+var _ NodePicker = (*HTTPPool)(nil)

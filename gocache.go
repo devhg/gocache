@@ -1,10 +1,9 @@
-package main
+package gocache
 
 import (
 	"fmt"
-	"github.com/cddgo/gocache/node"
-	"github.com/cddgo/gocache/singlereq"
 	pb "github.com/cddgo/gocache/proto"
+	"github.com/cddgo/gocache/singlereq"
 	"log"
 	"sync"
 )
@@ -18,24 +17,29 @@ type DataGetter interface {
 //定义一个函数类型 F，并且实现接口 A 的方法，然后在这个方法中调用自己。
 //这是 Go 语言中将其他函数（参数返回值定义与 F 一致）转换为接口 A 的常用技巧。
 
-// A GetterFunc implements Getter with a function.
+// A GetterFunc implements DataGetter with a function.
 type GetterFunc func(string) ([]byte, error)
 
-// Get implements Getter interface function
+// Get implements DataGetter interface function
 func (g GetterFunc) Get(key string) ([]byte, error) {
 	return g(key)
 }
 
 //一个group可以被认为一个缓存的命名空间
 //每一个group拥有一个唯一的name，这样可以创建多个group
-//score得分，info个人信息，courses课程
 type Group struct {
 	name       string
-	mainCache  cache      // 并发缓存实现
+	cacheBytes int64
 	dataGetter DataGetter //缓存未命中时获取数据源的回调
 
-	loader *singlereq.ReqGroup
-	picker node.NodePicker
+	// main cache support safe concurrent
+	mainCache cache
+
+	// 保证并发只会请求一次
+	singleReq *singlereq.ReqGroup
+
+	// nodePicker 节点选择器
+	picker NodePicker
 }
 
 var (
@@ -45,7 +49,7 @@ var (
 
 func NewGroup(name string, cacheBytes int64, getter DataGetter) *Group {
 	if getter == nil {
-		panic("getter is needed")
+		panic("dataGetter is needed")
 	}
 	mu.Lock()
 	defer mu.Unlock()
@@ -53,7 +57,7 @@ func NewGroup(name string, cacheBytes int64, getter DataGetter) *Group {
 		name:       name,
 		mainCache:  cache{cacheBytes: cacheBytes},
 		dataGetter: getter,
-		loader:     &singlereq.ReqGroup{},
+		singleReq:  &singlereq.ReqGroup{},
 	}
 	groups[name] = g
 	return groups[name]
@@ -83,14 +87,14 @@ func (g *Group) Get(key string) (ByteView, error) {
 }
 
 func (g *Group) load(key string) (byteView ByteView, err error) {
-	// 每一个key只允许请求一次远程服务器或者db  防止缓存击穿和缓存穿透
-	val, err := g.loader.Do(key, func() (i interface{}, err error) {
+	// 每一个key只允许请求一次远程服务器或者db  防止缓存击穿
+	val, err := g.singleReq.Do(key, func() (i interface{}, err error) {
 		if g.picker != nil {
 			if nodeGetter, ok := g.picker.PickNode(key); ok {
 				if byteView, err = g.getFromNode(nodeGetter, key); err == nil {
 					return byteView, nil
 				}
-				log.Println("[gfCache] Failed to get from other node", err)
+				log.Println("[goCache] Failed to get from other node", err)
 			}
 		}
 		return g.getLocally(key)
@@ -105,6 +109,7 @@ func (g *Group) load(key string) (byteView ByteView, err error) {
 func (g *Group) getLocally(key string) (ByteView, error) {
 	bytes, err := g.dataGetter.Get(key)
 	if err != nil {
+		log.Println("[goCache] Failed to get from dataSource", err)
 		return ByteView{}, err
 	}
 	byteView := ByteView{b: cloneBytes(bytes)}
@@ -117,19 +122,16 @@ func (g *Group) populateCache(key string, val ByteView) {
 	g.mainCache.add(key, val)
 }
 
-// 将实现了 NodePicker接口的 HTTPPool 注入到 Group 中
-func (g *Group) RegisterPicker(picker node.NodePicker) {
+// 将实现了 NodePicker 接口的 节点选择器 注入到 Group 中
+func (g *Group) RegisterPicker(picker NodePicker) {
 	if g.picker != nil {
 		panic("RegisterPeerPicker called more than once")
 	}
 	g.picker = picker
 }
 
-// 用实现了 NodeGetter 接口的 httpGetter 从访问远程节点，获取缓存值
-func (g *Group) getFromNode(getter node.NodeGetter, key string) (ByteView, error) {
-	if getter == nil {
-		panic("NodeGetter is required")
-	}
+// 用实现了 NodeGetter 接口访问远程节点，获取缓存值
+func (g *Group) getFromNode(getter NodeGetter, key string) (ByteView, error) {
 	request := &pb.Request{Group: g.name, Key: key}
 	response := &pb.Response{}
 	err := getter.Get(request, response)

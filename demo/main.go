@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/arl/statsviz"
+	"github.com/cddgo/gocache"
 	"log"
 	"math/rand"
 	"net/http"
@@ -18,8 +19,8 @@ var db = map[string]string{
 	"Sam":  "567",
 }
 
-func createGroup() *Group {
-	return NewGroup("scores", 2<<10, GetterFunc(
+func createGroup() *gocache.Group {
+	return gocache.NewGroup("scores", 2<<10, gocache.GetterFunc(
 		func(key string) ([]byte, error) {
 			log.Println("[SlowDB] search key", key)
 			if v, ok := db[key]; ok {
@@ -30,8 +31,8 @@ func createGroup() *Group {
 		}))
 }
 
-func startCacheServer(addr string, addrs []string, group *Group) {
-	pool := NewHTTPPool(addr)
+func startCacheServer(addr string, addrs []string, group *gocache.Group) {
+	pool := gocache.NewHTTPPool(addr)
 	pool.SetNodes(addrs...)
 
 	group.RegisterPicker(pool)
@@ -40,7 +41,7 @@ func startCacheServer(addr string, addrs []string, group *Group) {
 	log.Fatal(http.ListenAndServe(addr[7:], pool))
 }
 
-func startAPIServer(apiAddr string, group *Group) {
+func startAPIServer(apiAddr string, group *gocache.Group) {
 	// Force the GC to work to make the plots "move".
 	go work()
 
