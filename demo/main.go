@@ -3,13 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/arl/statsviz"
 	"github.com/cddgo/gocache"
 	"log"
-	"math/rand"
 	"net/http"
-	"strconv"
-	"time"
 )
 
 //用map模仿一个慢的数据库
@@ -20,6 +16,7 @@ var db = map[string]string{
 }
 
 func createGroup() *gocache.Group {
+	// 创建一个名字为 scores的 group。并注册真正的回调函数
 	return gocache.NewGroup("scores", 2<<10, gocache.GetterFunc(
 		func(key string) ([]byte, error) {
 			log.Println("[SlowDB] search key", key)
@@ -31,44 +28,57 @@ func createGroup() *gocache.Group {
 		}))
 }
 
+// startCacheServer 开启一个缓存服务
 func startCacheServer(addr string, addrs []string, group *gocache.Group) {
+	// 创建一个节点选择器
 	pool := gocache.NewHTTPPool(addr)
-	pool.SetNodes(addrs...)
+	pool.SetNodes(addrs...) // 节点选择器设置添加节点
 
+	// 注册节点选择器 到group
 	group.RegisterPicker(pool)
 
 	log.Println("gocache is running at", addr)
 	log.Fatal(http.ListenAndServe(addr[7:], pool))
 }
 
+// startAPIServer 创建一个对外的 REST Full API 服务
 func startAPIServer(apiAddr string, group *gocache.Group) {
-	// Force the GC to work to make the plots "move".
-	go work()
-
 	// Register statsviz handlers on the default serve mux.
-	statsviz.RegisterDefault()
+	//statsviz.RegisterDefault()
 	//http.ListenAndServe(":8080", nil)
 
-	http.Handle("/api", http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			key := r.URL.Query().Get("key")
-			byteView, err := group.Get(key)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
+	//http.Handle("/api", http.HandlerFunc(
+	//	func(w http.ResponseWriter, r *http.Request) {
+	//		key := r.URL.Query().Get("key")
+	//		byteView, err := group.Get(key)
+	//		if err != nil {
+	//			http.Error(w, err.Error(), http.StatusInternalServerError)
+	//		}
+	//
+	//		w.Header().Set("Content-Type", "application/octet-stream")
+	//		w.Write(byteView.ByteSlice())
+	//	}))
 
-			w.Header().Set("Content-Type", "application/octet-stream")
-			w.Write(byteView.ByteSlice())
-		}))
+	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		key := r.URL.Query().Get("key")
+		byteView, err := group.Get(key)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Write(byteView.ByteSlice())
+	})
 
 	log.Println("fontend server is running at", apiAddr)
 	log.Fatal(http.ListenAndServe(apiAddr[7:], nil))
 }
 
 func main() {
-
 	var port int
 	var api bool
+	// 分别读取端口  和  是否为api server
+	// ./server -port=8003 -api=1 &
 	flag.IntVar(&port, "port", 8001, "Geecache server port")
 	flag.BoolVar(&api, "api", false, "Start a api server?")
 	flag.Parse()
@@ -87,6 +97,7 @@ func main() {
 		addrs = append(addrs, v)
 	}
 
+	// 创建好的cacheGroup
 	gfcache := createGroup()
 
 	if api {
@@ -94,20 +105,4 @@ func main() {
 	}
 
 	startCacheServer(addrMap[port], addrs, gfcache)
-}
-
-func work() {
-	// Generate some allocations
-	m := map[string][]byte{}
-
-	for {
-		b := make([]byte, 512+rand.Intn(16*1024))
-		m[strconv.Itoa(len(m)%(10*100))] = b
-
-		if len(m)%(10*100) == 0 {
-			m = make(map[string][]byte)
-		}
-
-		time.Sleep(10 * time.Millisecond)
-	}
 }

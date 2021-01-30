@@ -3,7 +3,7 @@ package gocache
 import (
 	"fmt"
 	"github.com/cddgo/gocache/consistenthash"
-	pb "github.com/cddgo/gocache/proto"
+	pb "github.com/cddgo/gocache/gocachepb"
 	"github.com/golang/protobuf/proto"
 	"log"
 	"net/http"
@@ -15,6 +15,13 @@ const (
 	defaultBasePath   = "/_cache/"
 	defaultVirtualNum = 50
 )
+
+//节点选择器
+type NodePicker interface {
+	//利用一致性哈希算法，根据传入的 key 选择相应节点
+	//并返回节点处理器NodeGetter。
+	PickNode(key string) (NodeGetter, bool)
+}
 
 // HTTPPool implements PeerPicker for a pool of HTTP peers.
 type HTTPPool struct {

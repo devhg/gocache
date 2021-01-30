@@ -2,7 +2,7 @@ package singlereq
 
 import "sync"
 
-// 解决缓存击穿
+// 解决缓存击穿，缓存雪崩
 type call struct {
 	wg  sync.WaitGroup
 	val interface{}

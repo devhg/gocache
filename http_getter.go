@@ -2,19 +2,27 @@ package gocache
 
 import (
 	"fmt"
-	pb "github.com/cddgo/gocache/proto"
+	pb "github.com/cddgo/gocache/gocachepb"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 )
+
+//节点处理器
+type NodeGetter interface {
+	//用于从对应 group 查找对应key的缓存值
+	HttpGet(group, key string) ([]byte, error)
+	Get(*pb.Request, *pb.Response) error
+}
 
 type httpGetter struct {
 	baseUrl string //http://10.0.0.1:9305/_cache/
 }
 
-/*
-func (h *httpGetter) Get(group, key string) ([]byte, error) {
+// 普通http通信
+func (h *httpGetter) HttpGet(group, key string) ([]byte, error) {
 	url := fmt.Sprintf("%v%v/%v", h.baseUrl, group, key)
 	log.Println(url)
 
@@ -34,7 +42,6 @@ func (h *httpGetter) Get(group, key string) ([]byte, error) {
 	}
 	return bytes, nil
 }
-*/
 
 // protobuf通信
 func (h *httpGetter) Get(in *pb.Request, out *pb.Response) error {

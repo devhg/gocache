@@ -1,5 +1,5 @@
 syntax = "proto3";
-package proto;
+package gocachepb;
 //option go_package = "./";
 
 message Request {

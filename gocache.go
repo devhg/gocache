@@ -2,7 +2,7 @@ package gocache
 
 import (
 	"fmt"
-	pb "github.com/cddgo/gocache/proto"
+	pb "github.com/cddgo/gocache/gocachepb"
 	"github.com/cddgo/gocache/singlereq"
 	"log"
 	"sync"
