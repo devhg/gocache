@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cddgo/gocache"
 	"log"
 	"net/http"
+
+	"github.com/devhg/gocache"
 )
 
 //用map模仿一个慢的数据库

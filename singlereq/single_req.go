@@ -25,7 +25,7 @@ func (rg *ReqGroup) Do(key string, fn func() (interface{}, error)) (interface{},
 		rg.keyCall = make(map[string]*call)
 	}
 
-	//已经有一个请求在进行
+	// 已经有一个请求在进行
 	if call, ok := rg.keyCall[key]; ok {
 		rg.Unlock()
 		call.wg.Wait()            // 有请求正在进行中，等待已经进行的请求的结果

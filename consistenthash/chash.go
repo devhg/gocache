@@ -33,7 +33,7 @@ import (
 
 */
 
-//a hash maps bytes to uint32
+// Hash a hash maps bytes to uint32
 type Hash func(data []byte) uint32
 
 // Map contains all hashed keys
@@ -65,9 +65,9 @@ func (m *Map) Add(keys ...string) {
 		for i := 0; i < m.virtualNum; i++ {
 			// 计算虚拟节点的hash值
 			hash := m.hash([]byte(strconv.Itoa(i) + key))
-			//将虚拟节点的hash值添加到换上
+			// 将虚拟节点的hash值添加到换上
 			m.keys = append(m.keys, hash)
-			//增加虚拟节点和真实节点的映射关系
+			// 增加虚拟节点和真实节点的映射关系
 			m.hashMap[hash] = key
 		}
 	}
@@ -77,7 +77,7 @@ func (m *Map) Add(keys ...string) {
 	})
 }
 
-// 实现选择节点的get方法
+// Get 实现选择节点的get方法
 func (m *Map) Get(key string) string {
 	if len(key) == 0 {
 		return ""

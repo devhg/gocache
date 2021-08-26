@@ -1,4 +1,4 @@
-module github.com/cddgo/gocache
+module github.com/devhg/gocache
 
 go 1.13
 

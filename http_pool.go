@@ -2,13 +2,14 @@ package gocache
 
 import (
 	"fmt"
-	"github.com/cddgo/gocache/consistenthash"
-	pb "github.com/cddgo/gocache/gocachepb"
-	"github.com/golang/protobuf/proto"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/devhg/gocache/consistenthash"
+	pb "github.com/devhg/gocache/gocachepb"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -16,10 +17,10 @@ const (
 	defaultVirtualNum = 50
 )
 
-//节点选择器
+// NodePicker 节点选择器
 type NodePicker interface {
-	//利用一致性哈希算法，根据传入的 key 选择相应节点
-	//并返回节点处理器NodeGetter。
+	// 利用一致性哈希算法，根据传入的 key 选择相应节点
+	// 并返回节点处理器NodeGetter。
 	PickNode(key string) (NodeGetter, bool)
 }
 
@@ -45,7 +46,7 @@ func NewHTTPPool(selfAddr string) *HTTPPool {
 }
 
 // print the Log of HTTPPool
-func (p *HTTPPool) Log(format string, v ...interface{}) {
+func (p *HTTPPool) Logf(format string, v ...interface{}) {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Printf("[Server %s] %s\n", p.selfAddr, fmt.Sprintf(format, v...))
 }
@@ -65,7 +66,7 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	groupName := parts[2]
 	key := parts[3]
 
-	p.Log("%s %s -- group=%s key=%s", r.Method, r.URL.Path, groupName, key)
+	p.Logf("%s %s -- group=%s key=%s", r.Method, r.URL.Path, groupName, key)
 	group := GetGroup(groupName)
 
 	if group == nil {
@@ -79,12 +80,15 @@ func (p *HTTPPool) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
 	resp, err := proto.Marshal(&pb.Response{Value: byteView.ByteSlice()})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	_, _ = w.Write(resp)
-	return
-
 }
 
 // Set the pool's list of nodes' key.
@@ -99,7 +103,7 @@ func (p *HTTPPool) SetNodes(nodeKeys ...string) {
 
 	p.httpGetters = make(map[string]*httpGetter)
 	for _, nodeKey := range nodeKeys {
-		p.httpGetters[nodeKey] = &httpGetter{baseUrl: nodeKey + p.basePath}
+		p.httpGetters[nodeKey] = &httpGetter{baseURL: nodeKey + p.basePath}
 	}
 }
 
@@ -110,7 +114,7 @@ func (p *HTTPPool) PickNode(key string) (NodeGetter, bool) {
 	defer p.mu.Unlock()
 
 	if nodeKey := p.nodes.Get(key); nodeKey != "" && nodeKey != p.selfAddr {
-		p.Log("pick node %s", nodeKey)
+		p.Logf("pick node %s", nodeKey)
 		return p.httpGetters[nodeKey], true
 	}
 	return nil, false

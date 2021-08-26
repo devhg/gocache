@@ -1,11 +1,12 @@
 package gocache
 
 import (
-	"github.com/cddgo/gocache/lru"
 	"sync"
+
+	"github.com/devhg/gocache/lru"
 )
 
-//并发缓存，对核心lru进行封装
+// cache 并发缓存，对核心lru进行封装
 type cache struct {
 	sync.RWMutex
 	lru        *lru.Cache
@@ -14,13 +15,13 @@ type cache struct {
 	nevict     int64 // number of evictions
 }
 
-//添加缓存
+// add 添加缓存
 func (c *cache) add(key string, val ByteView) {
 	c.Lock()
 	defer c.Unlock()
 
-	//延迟初始化(Lazy Initialization)，一个对象的延迟初始化意味
-	//着该对象的创建将会延迟至第一次使用该对象时。主要用于提高性能，并减少程序内存要求。
+	// 延迟初始化(Lazy Initialization)，一个对象的延迟初始化意味
+	// 着该对象的创建将会延迟至第一次使用该对象时。主要用于提高性能，并减少程序内存要求。
 	if c.lru == nil {
 		c.lru = lru.New(&lru.CacheConfig{
 			MaxBytes: c.cacheBytes,
@@ -33,7 +34,7 @@ func (c *cache) add(key string, val ByteView) {
 	c.cacheBytes += int64(val.Len())
 }
 
-//获取缓存
+// 获取缓存
 func (c *cache) get(key string) (val ByteView, ok bool) {
 	c.RLock()
 	defer c.RUnlock()

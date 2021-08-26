@@ -18,7 +18,7 @@ type Cache struct {
 	ll    *list.List
 	cache map[string]*list.Element
 
-	//是某条记录被移除时的回调函数，可以为 nil
+	// 是某条记录被移除时的回调函数，可以为 nil
 	onEvicted func(key string, value Value)
 }
 
@@ -36,7 +36,7 @@ type Value interface {
 	Len() int
 }
 
-//双向链表节点的数据类型，保存key的目的是淘汰队首节点时，
+// 双向链表节点的数据类型，保存key的目的是淘汰队首节点时，
 type entry struct {
 	key   string
 	value Value
@@ -72,7 +72,7 @@ func (c *Cache) Add(key string, val Value) {
 		c.ll = list.New()
 	}
 
-	//缓存命中
+	// 缓存命中
 	if ele, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ele)
 		// 更新缓存内容

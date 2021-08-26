@@ -24,7 +24,7 @@ func TestA(t *testing.T) {
 	fmt.Println(parts[2])
 }
 
-//用map模仿一个慢的数据库
+// 用map模仿一个慢的数据库
 var db = map[string]string{
 	"A": "1",
 	"B": "2",
@@ -42,7 +42,7 @@ func TestGetGroup(t *testing.T) {
 				if _, ok := loadCounts[key]; !ok {
 					loadCounts[key] = 0
 				}
-				loadCounts[key] += 1
+				loadCounts[key]++
 				return []byte(v), nil
 			}
 			return nil, fmt.Errorf("%s is not found", key)
@@ -61,5 +61,4 @@ func TestGetGroup(t *testing.T) {
 	if get, err := group.Get("unknown"); err == nil {
 		t.Fatalf("the value of unknow should be empty, but %s got", get)
 	}
-
 }

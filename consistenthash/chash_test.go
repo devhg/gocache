@@ -30,7 +30,7 @@ func TestMap_Add(t *testing.T) {
 
 	chash.Add("8")
 
-	//"27":"2"  ==> "27":"8"
+	// "27":"2"  ==> "27":"8"
 	get := chash.Get("27")
 	fmt.Println("27", get)
 

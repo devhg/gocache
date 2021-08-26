@@ -2,28 +2,29 @@ package gocache
 
 import (
 	"fmt"
-	pb "github.com/cddgo/gocache/gocachepb"
-	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+
+	pb "github.com/devhg/gocache/gocachepb"
+	"google.golang.org/protobuf/proto"
 )
 
-//节点处理器
+// NodeGetter 节点处理器
 type NodeGetter interface {
-	//用于从对应 group 查找对应key的缓存值
-	HttpGet(group, key string) ([]byte, error)
+	// 用于从对应 group 查找对应key的缓存值
+	HTTPGet(group, key string) ([]byte, error)
 	Get(*pb.Request, *pb.Response) error
 }
 
 type httpGetter struct {
-	baseUrl string //http://10.0.0.1:9305/_cache/
+	baseURL string // http://10.0.0.1:9305/_cache/
 }
 
 // 普通http通信
-func (h *httpGetter) HttpGet(group, key string) ([]byte, error) {
-	url := fmt.Sprintf("%v%v/%v", h.baseUrl, group, key)
+func (h *httpGetter) HTTPGet(group, key string) ([]byte, error) {
+	url := fmt.Sprintf("%v%v/%v", h.baseURL, group, key)
 	log.Println(url)
 
 	resp, err := http.Get(url)
@@ -47,7 +48,7 @@ func (h *httpGetter) HttpGet(group, key string) ([]byte, error) {
 func (h *httpGetter) Get(in *pb.Request, out *pb.Response) error {
 	URL := fmt.Sprintf(
 		"%v%v/%v",
-		h.baseUrl,
+		h.baseURL,
 		url.QueryEscape(in.GetGroup()),
 		url.QueryEscape(in.GetKey()),
 	)
